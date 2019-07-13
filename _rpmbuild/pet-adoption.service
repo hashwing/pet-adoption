@@ -1,0 +1,13 @@
+[Unit]
+Description=pet-adoption service
+Requires=network.service
+After=network.service
+
+[Service]
+PIDFile=/var/run/pet-adoption.pid
+ExecStartPre=/bin/rm -f /var/run/pet-adoption.pid
+ExecStart=/usr/local/bin/pet-adoption
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
