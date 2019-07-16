@@ -173,18 +173,30 @@ func FindPetPublics(cityID, localityID, petClassID, key string, start, count int
 		expr += "title like %%" + key + "%%"
 	}
 
+	session := MysqlDB.Limit(count, start).OrderBy("updated desc")
 	if expr != "" {
-		err := MysqlDB.Where(expr).Limit(count, start).Find(&adps)
-		if err != nil {
-			return adps, err
-		}
-		return adps, nil
+		session = session.Where(expr)
 	}
-	err := MysqlDB.Limit(count, start).Find(&adps)
+	if petClassID != "" {
+		session = session.Where("pet_classid=?", petClassID)
+	}
+	err := session.Find(&adps)
 	if err != nil {
 		return adps, err
 	}
 	return adps, nil
+}
+
+func GetPetPublic(uuid string) (*PetPublic, error) {
+	var p PetPublic
+	isExist, err := MysqlDB.Where("uuid=?", uuid).Get(&p)
+	if err != nil {
+		return nil, err
+	}
+	if !isExist {
+		return nil, errors.New("pet public not found")
+	}
+	return &p, nil
 }
 
 func FindPetPublicsByUser(uid string) ([]PetPublic, error) {

@@ -24,7 +24,7 @@ func (c *OssController) GetToken() {
 }
 
 func (c *OssController) GetImg() {
-	key := c.GetString("key")
+	key := c.Ctx.Input.Param(":key")
 	data, err := oss.Get(
 		config.Cfg.OssConfig.InHost,
 		config.Cfg.OssConfig.AccessKeyId,
@@ -37,4 +37,27 @@ func (c *OssController) GetImg() {
 		return
 	}
 	c.Ctx.ResponseWriter.Write(data)
+}
+
+func (c *OssController) DelImg() {
+	defer c.ServeJSON()
+	key := c.Ctx.Input.Param(":key")
+	if key == "" {
+		c.SetErrMsg(400, "key is null")
+		return
+	}
+	err := oss.Del(
+		config.Cfg.OssConfig.InHost,
+		config.Cfg.OssConfig.AccessKeyId,
+		config.Cfg.OssConfig.AccessKeySecret,
+		config.Cfg.OssConfig.UploadDir,
+		config.Cfg.OssConfig.UploadDir+"/"+key,
+	)
+	if err != nil {
+		log.Error(err)
+		c.SetErrMsg(500, err.Error())
+		return
+	}
+	c.SetResult(nil, nil, 204)
+
 }

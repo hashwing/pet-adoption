@@ -31,7 +31,7 @@ func (c *AdoptionController) PublicList() {
 	localityID := c.GetString("locality_id")
 	petClassID := c.GetString("petClass_id")
 	key := c.GetString("key")
-	start, err := c.GetInt("page")
+	page, err := c.GetInt("page")
 	if err != nil {
 		log.Error(err)
 		c.SetErrMsg(400, "请求参数错误")
@@ -43,6 +43,7 @@ func (c *AdoptionController) PublicList() {
 		c.SetErrMsg(400, "请求参数错误")
 		return
 	}
+	start := size * (page - 1)
 	ps, err := db.FindPetPublics(cityID, localityID, petClassID, key, start, size)
 	if err != nil {
 		log.Error(err)
@@ -83,6 +84,17 @@ func (c *AdoptionController) CreatePublic() {
 	c.SetResult(nil, nil, 204)
 }
 
+func (c *AdoptionController) GetPublic() {
+	defer c.ServeJSON()
+	uuid := c.Ctx.Input.Param(":uuid")
+	p, err := db.GetPetPublic(uuid)
+	if err != nil {
+		c.SetErrMsg(500, err.Error())
+		return
+	}
+	c.SetResult(nil, p, 200)
+}
+
 func (c *AdoptionController) UpdatePublic() {
 	defer c.ServeJSON()
 	var pp db.PetPublic
@@ -91,7 +103,7 @@ func (c *AdoptionController) UpdatePublic() {
 		c.SetErrMsg(400, err.Error())
 		return
 	}
-	pp.ID = c.GetString("uuid")
+	pp.ID = c.Ctx.Input.Param(":uuid")
 	if pp.ID == "" {
 		c.SetErrMsg(400, "id 不能为空")
 		return
@@ -109,7 +121,7 @@ func (c *AdoptionController) UpdatePublic() {
 
 func (c *AdoptionController) DeletePublic() {
 	defer c.ServeJSON()
-	uuid := c.GetString("uuid")
+	uuid := c.Ctx.Input.Param(":uuid")
 	if uuid == "" {
 		c.SetErrMsg(400, "参数错误")
 		return
@@ -137,7 +149,7 @@ func (c *AdoptionController) ApplyListByUser() {
 
 func (c *AdoptionController) ApplyListByPet() {
 	defer c.ServeJSON()
-	petID := c.GetString("pet_id")
+	petID := c.Ctx.Input.Param(":pet_id")
 	uid := c.GetUID()
 	applys, err := db.FindAdoptionApplyByPetID(petID, uid)
 	if err != nil {
@@ -150,7 +162,7 @@ func (c *AdoptionController) ApplyListByPet() {
 func (c *AdoptionController) CreateApply() {
 	defer c.ServeJSON()
 	uid := c.GetUID()
-	petID := c.GetString("pet_id")
+	petID := c.Ctx.Input.Param(":pet_id")
 	var apply db.AdoptionApply
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &apply)
 	if err != nil {
@@ -174,8 +186,8 @@ func (c *AdoptionController) CreateApply() {
 
 func (c *AdoptionController) UpdateApply() {
 	defer c.ServeJSON()
-	uuid := c.GetString("uuid")
-	petID := c.GetString("pet_id")
+	uuid := c.Ctx.Input.Param(":uuid")
+	petID := c.Ctx.Input.Param(":pet_id")
 	uid := c.GetUID()
 	var apply db.AdoptionApply
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &apply)
@@ -201,7 +213,7 @@ func (c *AdoptionController) UpdateApply() {
 func (c *AdoptionController) DelApply() {
 	defer c.ServeJSON()
 	//petID := c.GetString("pet_id")
-	uuid := c.GetString("uuid")
+	uuid := c.Ctx.Input.Param(":uuid")
 	uid := c.GetUID()
 	err := db.DelAdoptionApply(uid, uuid)
 	if err != nil {

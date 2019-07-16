@@ -114,3 +114,16 @@ func Get(Endpoint, AccessKeyID, AccessKeySecret, Bucket, key string) ([]byte, er
 	}
 	return data, err
 }
+
+func Del(Endpoint, AccessKeyID, AccessKeySecret, Bucket, key string) error {
+	client, err := oss.New(Endpoint, AccessKeyID, AccessKeySecret)
+	if err != nil {
+		return err
+	}
+
+	bucket, err := client.Bucket(Bucket)
+	if err != nil {
+		return err
+	}
+	return bucket.DeleteObject(key)
+}

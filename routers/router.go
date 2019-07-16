@@ -18,7 +18,7 @@ func init() {
 	)
 
 	staticApi := beego.NewNamespace("/pet/static",
-		beego.NSRouter("img", &controllers.OssController{}, "get:GetImg"),
+		beego.NSRouter("img/:key", &controllers.OssController{}, "get:GetImg;delete:DelImg"),
 	)
 
 	api := beego.NewNamespace("/pet/api",
@@ -31,7 +31,7 @@ func init() {
 		beego.NSRouter("v1/adoption", &controllers.AdoptionController{}, "get:PublicList"),
 		beego.NSRouter("v1/adoption/pet", &controllers.AdoptionController{}, "get:PublicListByUser;post:CreatePublic"),
 		beego.NSRouter("v1/adoption/pet/:uuid", &controllers.AdoptionController{}, "put:UpdatePublic;delete:DeletePublic"),
-		beego.NSRouter("v1/adoption/pet/:uuid", &controllers.AdoptionController{}, "put:UpdatePublic;delete:DeletePublic"),
+		beego.NSRouter("v1/adoption/pet/:uuid", &controllers.AdoptionController{}, "get:GetPublic;put:UpdatePublic;delete:DeletePublic"),
 		beego.NSRouter("v1/adoption/pet/:pet_id/application", &controllers.AdoptionController{}, "get:ApplyListByPet;post:CreateApply"),
 		beego.NSRouter("v1/adoption/pet/:pet_id/application/:uuid", &controllers.AdoptionController{}, "put:UpdateApply;delete:DelApply"),
 		beego.NSRouter("v1/adoption/application", &controllers.AdoptionController{}, "get:ApplyListByUser"),
