@@ -35,6 +35,7 @@ func init() {
 		beego.NSRouter("v1/adoption/pet/:pet_id/application", &controllers.AdoptionController{}, "get:ApplyListByPet;post:CreateApply"),
 		beego.NSRouter("v1/adoption/pet/:pet_id/application/:uuid", &controllers.AdoptionController{}, "put:UpdateApply;delete:DelApply"),
 		beego.NSRouter("v1/adoption/application", &controllers.AdoptionController{}, "get:ApplyListByUser"),
+		beego.NSRouter("v1/adoption/application/:uuid", &controllers.AdoptionController{}, "get:GetApply"),
 	)
 
 	beego.AddNamespace(authApi, staticApi, api)

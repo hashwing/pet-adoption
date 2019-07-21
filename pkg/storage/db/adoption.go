@@ -268,6 +268,18 @@ func FindAdoptionApplyByUserID(userID string) ([]AdoptionApply, error) {
 	return adapplys, err
 }
 
+func GetAdoptionApply(uuid string) (*AdoptionApply, error) {
+	var adapply AdoptionApply
+	isExist, err := MysqlDB.Where("uuid=?", uuid).Get(&adapply)
+	if err != nil {
+		return nil, err
+	}
+	if !isExist {
+		return nil, errors.New("apply not found")
+	}
+	return &adapply, nil
+}
+
 func CreateAdoptionApply(adapply AdoptionApply) error {
 	_, err := MysqlDB.Insert(adapply)
 	return err

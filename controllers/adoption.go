@@ -159,6 +159,17 @@ func (c *AdoptionController) ApplyListByPet() {
 	c.SetResult(nil, applys, 200)
 }
 
+func (c *AdoptionController) GetApply() {
+	defer c.ServeJSON()
+	uuid := c.Ctx.Input.Param(":uuid")
+	apply, err := db.GetAdoptionApply(uuid)
+	if err != nil {
+		c.SetErrMsg(500, err.Error())
+		return
+	}
+	c.SetResult(nil, apply, 200)
+}
+
 func (c *AdoptionController) CreateApply() {
 	defer c.ServeJSON()
 	uid := c.GetUID()
