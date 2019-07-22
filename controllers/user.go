@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"encoding/json"
+
 	"github.com/astaxie/beego/validation"
 
 	"github.com/hashwing/pet-adoption/pkg/auth"
@@ -12,6 +14,23 @@ import (
 
 type UserController struct {
 	BaseController
+}
+
+func (c *UserController) Put() {
+	defer c.ServeJSON()
+	var user db.User
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &user)
+	if err != nil {
+		c.SetErrMsg(400, err.Error())
+		return
+	}
+	user.ID = c.GetUID()
+	err = db.UpdateUser(user)
+	if err != nil {
+		c.SetErrMsg(500, err.Error())
+		return
+	}
+	c.SetResult(nil, nil, 204)
 }
 
 func (c *UserController) WxLogin() {

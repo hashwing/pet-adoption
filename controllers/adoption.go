@@ -74,6 +74,7 @@ func (c *AdoptionController) CreatePublic() {
 	}
 	pp.ID = common.NewUUID()
 	pp.UserID = c.GetUID()
+	pp.State = db.PetPublicState
 
 	err = db.CreatePetPublics(pp)
 	if err != nil {
@@ -151,8 +152,13 @@ func (c *AdoptionController) ApplyListByPet() {
 	defer c.ServeJSON()
 	petID := c.Ctx.Input.Param(":pet_id")
 	uid := c.GetUID()
+	if petID == "" {
+		c.SetErrMsg(400, "pet_id 不能为空")
+		return
+	}
 	applys, err := db.FindAdoptionApplyByPetID(petID, uid)
 	if err != nil {
+		log.Error(err)
 		c.SetErrMsg(500, err.Error())
 		return
 	}
@@ -162,8 +168,13 @@ func (c *AdoptionController) ApplyListByPet() {
 func (c *AdoptionController) GetApply() {
 	defer c.ServeJSON()
 	uuid := c.Ctx.Input.Param(":uuid")
+	if uuid == "" {
+		c.SetErrMsg(400, "uuid 不能为空")
+		return
+	}
 	apply, err := db.GetAdoptionApply(uuid)
 	if err != nil {
+		log.Error(err)
 		c.SetErrMsg(500, err.Error())
 		return
 	}
@@ -213,7 +224,7 @@ func (c *AdoptionController) UpdateApply() {
 	}
 	apply.ID = uuid
 	apply.UserID = uid
-	err = db.CreateAdoptionApply(apply)
+	err = db.UpdateAdoptionApply(apply)
 	if err != nil {
 		c.SetErrMsg(500, err.Error())
 		return

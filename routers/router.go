@@ -23,6 +23,7 @@ func init() {
 
 	api := beego.NewNamespace("/pet/api",
 		beego.NSRouter("v1/oss", &controllers.OssController{}, "get:GetToken"),
+		beego.NSRouter("v1/user", &controllers.UserController{}, "put:Put"),
 		beego.NSRouter("v1/province", &controllers.LocalityController{}, "get:FindProvinces"),
 		beego.NSRouter("v1/province/:province_id/city", &controllers.LocalityController{}, "get:FindCitys"),
 		beego.NSRouter("v1/province/:province_id/city/:city_id/locality", &controllers.LocalityController{}, "get:FindLocalities"),

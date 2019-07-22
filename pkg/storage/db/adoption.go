@@ -130,13 +130,20 @@ type PetPublic struct {
 	PetDisposition   string    `json:"pet_disposition" xorm:"pet_disposition"`
 	PetVaccine       int       `json:"pet_vaccine" xorm:"pet_vaccine"`
 	PetSterilization int       `json:"pet_sterilization" xorm:"pet_sterilization"`
-	State            bool      `json:"pet_state" xorm:"pet_state"`
+	State            int       `json:"pet_state" xorm:"pet_state TINYINT(1)"`
 	PetDescription   string    `json:"pet_description" xorm:"Text pet_description"`
 	AdopteReq        string    `json:"adoption_request" xorm:"varchar(2048) adoption_request"`
 	PetImages        []string  `json:"pet_images" xorm:"varchar(1024) pet_images"`
 	Created          time.Time `json:"created" xorm:"created"`
 	Updated          time.Time `json:"updated" xorm:"updated"`
 }
+
+//
+const (
+	PetPublicState int = 1
+	PetFinishState     = iota
+	PetCancelState
+)
 
 //FindPetPublics
 func FindPetPublics(cityID, localityID, petClassID, key string, start, count int) ([]PetPublic, error) {
@@ -173,7 +180,7 @@ func FindPetPublics(cityID, localityID, petClassID, key string, start, count int
 		expr += "title like %%" + key + "%%"
 	}
 
-	session := MysqlDB.Limit(count, start).OrderBy("updated desc")
+	session := MysqlDB.Where("pet_state=?", PetPublicState).Limit(count, start).OrderBy("updated desc")
 	if expr != "" {
 		session = session.Where(expr)
 	}
@@ -245,20 +252,23 @@ const (
 	ApplyPass = iota
 	ApplyFail
 	ApplyDel
+	ApplyCancel
 )
 
 type AdoptionApply struct {
-	ID     string      `json:"uuid" xorm:"'uuid'"`
-	UserID string      `json:"user_id" xorm:"user_id"`
-	PetID  string      `json:"pet_id" xorm:"pet_id"`
-	State  int         `json:"state" xorm:"state"`
-	Remark string      `json:"remark" xorm:"remark"`
-	Infos  interface{} `json:"infos" xorm:"json infos"`
+	ID      string      `json:"uuid" xorm:"'uuid'"`
+	UserID  string      `json:"user_id" xorm:"user_id"`
+	PetID   string      `json:"pet_id" xorm:"pet_id"`
+	State   int         `json:"state" xorm:"state"`
+	Remark  string      `json:"remark" xorm:"remark"`
+	Infos   interface{} `json:"infos" xorm:"json infos"`
+	Created time.Time   `json:"created" xorm:"created"`
+	Updated time.Time   `json:"updated" xorm:"updated"`
 }
 
 func FindAdoptionApplyByPetID(petID, uid string) ([]AdoptionApply, error) {
 	var adapplys []AdoptionApply
-	err := MysqlDB.Where("pet_id=?,user_id=?", petID, uid).Find(&adapplys)
+	err := MysqlDB.Where("pet_id=? and user_id=?", petID, uid).Find(&adapplys)
 	return adapplys, err
 }
 
@@ -281,12 +291,47 @@ func GetAdoptionApply(uuid string) (*AdoptionApply, error) {
 }
 
 func CreateAdoptionApply(adapply AdoptionApply) error {
-	_, err := MysqlDB.Insert(adapply)
+	var apply AdoptionApply
+	isExist, err := MysqlDB.Where("user_id=? and pet_id=?", adapply.UserID, adapply.PetID).Get(&apply)
+	if err != nil {
+		return err
+	}
+	if isExist {
+		return errors.New("apply is exist")
+	}
+	_, err = MysqlDB.Insert(adapply)
 	return err
 }
 
 func UpdateAdoptionApply(adapply AdoptionApply) error {
-	_, err := MysqlDB.Where("uuid=? user_id=?", adapply.ID, adapply.UserID).Update(adapply)
+	session := MysqlDB.NewSession()
+	err := session.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = session.Where("uuid=? and user_id=?", adapply.ID, adapply.UserID).Update(adapply)
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+	if adapply.State == ApplyPass {
+		ap := AdoptionApply{
+			State: ApplyFail,
+		}
+		_, err := session.Where("pet_id=? and state=?", adapply.PetID, ApplyWait).Update(ap)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+		adoption := PetPublic{
+			State: PetFinishState,
+		}
+		_, err = session.Where("id=?", adapply.PetID).Update(adoption)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
+	}
 	return err
 }
 

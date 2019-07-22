@@ -16,6 +16,11 @@ func AddUser(user User) error {
 	return err
 }
 
+func UpdateUser(user User) error {
+	_, err := MysqlDB.Where("uuid=?", user.ID).Update(user)
+	return err
+}
+
 func UserExistByOpenID(openid string) (*User, bool, error) {
 	var u User
 	isExist, err := MysqlDB.Where("openid=?", openid).Get(&u)
