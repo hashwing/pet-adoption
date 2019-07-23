@@ -258,6 +258,7 @@ const (
 type AdoptionApply struct {
 	ID      string      `json:"uuid" xorm:"'uuid'"`
 	UserID  string      `json:"user_id" xorm:"user_id"`
+	User    User        `json:"user" xorm:"-"`
 	PetID   string      `json:"pet_id" xorm:"pet_id"`
 	State   int         `json:"state" xorm:"state"`
 	Remark  string      `json:"remark" xorm:"remark"`

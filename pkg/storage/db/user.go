@@ -1,5 +1,7 @@
 package db
 
+import "errors"
+
 type User struct {
 	ID        string `json:"uuid" xorm:"'uuid'"`
 	OpenID    string `json:"openid" xorm:"openid"`
@@ -25,4 +27,16 @@ func UserExistByOpenID(openid string) (*User, bool, error) {
 	var u User
 	isExist, err := MysqlDB.Where("openid=?", openid).Get(&u)
 	return &u, isExist, err
+}
+
+func GetUser(uuid string) (*User, error) {
+	var u User
+	isExist, err := MysqlDB.Where("uuid=?", uuid).Get(&u)
+	if err != nil {
+		return nil, err
+	}
+	if !isExist {
+		return nil, errors.New("user not found")
+	}
+	return &u, nil
 }

@@ -162,6 +162,15 @@ func (c *AdoptionController) ApplyListByPet() {
 		c.SetErrMsg(500, err.Error())
 		return
 	}
+
+	for i, ap := range applys {
+		u, err := db.GetUser(ap.UserID)
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		applys[i].User = *u
+	}
 	c.SetResult(nil, applys, 200)
 }
 
@@ -178,6 +187,7 @@ func (c *AdoptionController) GetApply() {
 		c.SetErrMsg(500, err.Error())
 		return
 	}
+
 	c.SetResult(nil, apply, 200)
 }
 
