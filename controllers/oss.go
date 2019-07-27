@@ -34,6 +34,7 @@ func (c *OssController) GetImg() {
 	)
 	if err != nil {
 		log.Error(err)
+		c.Ctx.ResponseWriter.WriteHeader(404)
 		return
 	}
 	c.Ctx.ResponseWriter.Write(data)

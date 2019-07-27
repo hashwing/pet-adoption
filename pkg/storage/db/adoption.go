@@ -119,6 +119,7 @@ type PetPublic struct {
 	ID               string    `json:"uuid" xorm:"'uuid'"`
 	Title            string    `json:"title" xorm:"title"`
 	UserID           string    `json:"user_id" xorm:"user_id"`
+	User             User      `json:"user" xorm:"-"`
 	LocalityID       string    `json:"locality_id" xorm:"locality_id"`
 	LocalityName     string    `json:"locality_name" xorm:"locality_name"`
 	Free             bool      `json:"free" xorm:"free"`
@@ -140,14 +141,14 @@ type PetPublic struct {
 
 //
 const (
-	PetPublicState int = 1
-	PetFinishState     = iota
+	PetPublicState int = iota + 1
+	PetFinishState
 	PetCancelState
 )
 
 //FindPetPublics
 func FindPetPublics(cityID, localityID, petClassID, key string, start, count int) ([]PetPublic, error) {
-	var adps []PetPublic
+	adps := make([]PetPublic, 0)
 	expr := ""
 	if cityID != "" {
 		var ls []Locality
@@ -248,28 +249,29 @@ func DelPetPublics(user_id, uuid string) error {
 }
 
 const (
-	ApplyWait = 1
-	ApplyPass = iota
+	ApplyWait = iota + 1
+	ApplyPass
 	ApplyFail
 	ApplyDel
 	ApplyCancel
 )
 
 type AdoptionApply struct {
-	ID      string      `json:"uuid" xorm:"'uuid'"`
-	UserID  string      `json:"user_id" xorm:"user_id"`
-	User    User        `json:"user" xorm:"-"`
-	PetID   string      `json:"pet_id" xorm:"pet_id"`
-	State   int         `json:"state" xorm:"state"`
-	Remark  string      `json:"remark" xorm:"remark"`
-	Infos   interface{} `json:"infos" xorm:"json infos"`
-	Created time.Time   `json:"created" xorm:"created"`
-	Updated time.Time   `json:"updated" xorm:"updated"`
+	ID      string                 `json:"uuid" xorm:"'uuid'"`
+	UserID  string                 `json:"user_id" xorm:"user_id"`
+	User    User                   `json:"user" xorm:"-"`
+	Pet     PetPublic              `json:"pet" xorm:"-"`
+	PetID   string                 `json:"pet_id" xorm:"pet_id"`
+	State   int                    `json:"state" xorm:"state"`
+	Remark  string                 `json:"remark" xorm:"remark"`
+	Infos   map[string]interface{} `json:"infos" xorm:"infos json"`
+	Created time.Time              `json:"created" xorm:"created"`
+	Updated time.Time              `json:"updated" xorm:"updated"`
 }
 
-func FindAdoptionApplyByPetID(petID, uid string) ([]AdoptionApply, error) {
+func FindAdoptionApplyByPetID(petID string) ([]AdoptionApply, error) {
 	var adapplys []AdoptionApply
-	err := MysqlDB.Where("pet_id=? and user_id=?", petID, uid).Find(&adapplys)
+	err := MysqlDB.Where("pet_id=?", petID).Find(&adapplys)
 	return adapplys, err
 }
 
@@ -310,16 +312,25 @@ func UpdateAdoptionApply(adapply AdoptionApply) error {
 	if err != nil {
 		return err
 	}
-	_, err = session.Where("uuid=? and user_id=?", adapply.ID, adapply.UserID).Update(adapply)
+	defer func() {
+		err := recover()
+		if err != nil {
+			log.Error(err)
+			session.Rollback()
+		}
+	}()
+	log.Debug("update apply", adapply)
+	_, err = session.Where("uuid=?", adapply.ID).Update(&adapply)
 	if err != nil {
 		session.Rollback()
 		return err
 	}
+	log.Debug("update finish", ApplyPass)
 	if adapply.State == ApplyPass {
 		ap := AdoptionApply{
 			State: ApplyFail,
 		}
-		_, err := session.Where("pet_id=? and state=?", adapply.PetID, ApplyWait).Update(ap)
+		_, err := session.Where("pet_id=? and state=? and uuid<>?", adapply.PetID, ApplyWait, adapply.ID).Update(&ap)
 		if err != nil {
 			session.Rollback()
 			return err
@@ -327,13 +338,14 @@ func UpdateAdoptionApply(adapply AdoptionApply) error {
 		adoption := PetPublic{
 			State: PetFinishState,
 		}
-		_, err = session.Where("id=?", adapply.PetID).Update(adoption)
+		_, err = session.Where("uuid=?", adapply.PetID).Update(&adoption)
 		if err != nil {
 			session.Rollback()
 			return err
 		}
 	}
-	return err
+
+	return session.Commit()
 }
 
 func DelAdoptionApply(user_id, uuid string) error {

@@ -50,6 +50,14 @@ func (c *AdoptionController) PublicList() {
 		c.SetErrMsg(500, "数据库错误")
 		return
 	}
+	for i, p := range ps {
+		u, err := db.GetUser(p.UserID)
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		ps[i].User = *u
+	}
 	c.SetResult(nil, ps, 200)
 }
 
@@ -145,18 +153,25 @@ func (c *AdoptionController) ApplyListByUser() {
 		c.SetErrMsg(500, err.Error())
 		return
 	}
+	for i, ap := range applys {
+		pp, err := db.GetPetPublic(ap.PetID)
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		applys[i].Pet = *pp
+	}
 	c.SetResult(nil, applys, 200)
 }
 
 func (c *AdoptionController) ApplyListByPet() {
 	defer c.ServeJSON()
 	petID := c.Ctx.Input.Param(":pet_id")
-	uid := c.GetUID()
 	if petID == "" {
 		c.SetErrMsg(400, "pet_id 不能为空")
 		return
 	}
-	applys, err := db.FindAdoptionApplyByPetID(petID, uid)
+	applys, err := db.FindAdoptionApplyByPetID(petID)
 	if err != nil {
 		log.Error(err)
 		c.SetErrMsg(500, err.Error())
@@ -187,6 +202,11 @@ func (c *AdoptionController) GetApply() {
 		c.SetErrMsg(500, err.Error())
 		return
 	}
+	pp, err := db.GetPetPublic(apply.PetID)
+	if err != nil {
+		log.Error(err)
+	}
+	apply.Pet = *pp
 
 	c.SetResult(nil, apply, 200)
 }
@@ -236,6 +256,7 @@ func (c *AdoptionController) UpdateApply() {
 	apply.UserID = uid
 	err = db.UpdateAdoptionApply(apply)
 	if err != nil {
+		log.Error(err)
 		c.SetErrMsg(500, err.Error())
 		return
 	}
