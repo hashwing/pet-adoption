@@ -257,16 +257,16 @@ const (
 )
 
 type AdoptionApply struct {
-	ID      string                 `json:"uuid" xorm:"'uuid'"`
-	UserID  string                 `json:"user_id" xorm:"user_id"`
-	User    User                   `json:"user" xorm:"-"`
-	Pet     PetPublic              `json:"pet" xorm:"-"`
-	PetID   string                 `json:"pet_id" xorm:"pet_id"`
-	State   int                    `json:"state" xorm:"state"`
-	Remark  string                 `json:"remark" xorm:"remark"`
-	Infos   map[string]interface{} `json:"infos" xorm:"infos json"`
-	Created time.Time              `json:"created" xorm:"created"`
-	Updated time.Time              `json:"updated" xorm:"updated"`
+	ID      string    `json:"uuid" xorm:"'uuid'"`
+	UserID  string    `json:"user_id" xorm:"user_id"`
+	User    User      `json:"user" xorm:"-"`
+	Pet     PetPublic `json:"pet" xorm:"-"`
+	PetID   string    `json:"pet_id" xorm:"pet_id"`
+	State   int       `json:"state" xorm:"state"`
+	Remark  string    `json:"remark" xorm:"remark"`
+	Infos   string    `json:"infos" xorm:"infos TEXT"`
+	Created time.Time `json:"created" xorm:"created"`
+	Updated time.Time `json:"updated" xorm:"updated"`
 }
 
 func FindAdoptionApplyByPetID(petID string) ([]AdoptionApply, error) {

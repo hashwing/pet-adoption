@@ -240,7 +240,6 @@ func (c *AdoptionController) UpdateApply() {
 	defer c.ServeJSON()
 	uuid := c.Ctx.Input.Param(":uuid")
 	petID := c.Ctx.Input.Param(":pet_id")
-	uid := c.GetUID()
 	var apply db.AdoptionApply
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &apply)
 	if err != nil {
@@ -253,7 +252,6 @@ func (c *AdoptionController) UpdateApply() {
 		return
 	}
 	apply.ID = uuid
-	apply.UserID = uid
 	err = db.UpdateAdoptionApply(apply)
 	if err != nil {
 		log.Error(err)
