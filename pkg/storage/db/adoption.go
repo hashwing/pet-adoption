@@ -109,11 +109,6 @@ func FindPetClass() ([]PetClass, error) {
 	return petClasses, err
 }
 
-const (
-	PetPublicIn  = 1
-	PetPublicOut = 0
-)
-
 // PetPublic
 type PetPublic struct {
 	ID               string    `json:"uuid" xorm:"'uuid'"`
@@ -214,13 +209,29 @@ func FindPetPublicsByUser(uid string) ([]PetPublic, error) {
 }
 
 func CreatePetPublics(adp PetPublic) error {
-	_, err := MysqlDB.Insert(adp)
+	_, err := MysqlDB.Insert(&adp)
 	return err
 }
 
 func UpdatePetPublics(adp PetPublic) error {
-	_, err := MysqlDB.Where("uuid=? and user_id=?", adp.ID, adp.UserID).Update(adp)
-	return err
+	s := MysqlDB.NewSession()
+	_, err := s.Where("uuid=? and user_id=?", adp.ID, adp.UserID).Update(&adp)
+	if err != nil {
+		s.Rollback()
+		return err
+	}
+	if adp.State == PetCancelState {
+		apply := AdoptionApply{
+			State:  ApplyFail,
+			Remark: "宠物已经被发布者下架",
+		}
+		_, err = s.Where("pet_id=?", adp.ID).Update(&apply)
+		if err != nil {
+			s.Rollback()
+			return err
+		}
+	}
+	return s.Commit()
 }
 
 func DelPetPublics(user_id, uuid string) error {
@@ -233,7 +244,7 @@ func DelPetPublics(user_id, uuid string) error {
 	}
 	apply := AdoptionApply{
 		State:  ApplyDel,
-		Remark: "宠物发布已经移除",
+		Remark: "宠物已经被发布者移除",
 	}
 	_, err = s.Where("pet_id=?", uuid).Update(&apply)
 	if err != nil {
@@ -319,7 +330,7 @@ func UpdateAdoptionApply(adapply AdoptionApply) error {
 			session.Rollback()
 		}
 	}()
-	log.Debug("update apply", adapply)
+	log.Debug("update apply")
 	_, err = session.Where("uuid=?", adapply.ID).Update(&adapply)
 	if err != nil {
 		session.Rollback()

@@ -101,6 +101,11 @@ func (c *AdoptionController) GetPublic() {
 		c.SetErrMsg(500, err.Error())
 		return
 	}
+	u, err := db.GetUser(p.UserID)
+	if err != nil {
+		log.Error(err)
+	}
+	p.User = *u
 	c.SetResult(nil, p, 200)
 }
 
@@ -263,7 +268,6 @@ func (c *AdoptionController) UpdateApply() {
 
 func (c *AdoptionController) DelApply() {
 	defer c.ServeJSON()
-	//petID := c.GetString("pet_id")
 	uuid := c.Ctx.Input.Param(":uuid")
 	uid := c.GetUID()
 	err := db.DelAdoptionApply(uid, uuid)
