@@ -5,7 +5,7 @@ GO           	= go
 SPECE_DIR       = ./_rpmbuild
 RPMBUILD_DIR	= /root/rpmbuild
 VERSION = 1.0.0
-RELEASE = 28
+RELEASE = 29
 DOCKERREPO = 192.168.1.100:5000/gzsunrun
 BRANCH ?= master
 

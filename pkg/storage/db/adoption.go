@@ -288,7 +288,7 @@ func FindAdoptionApplyByPetID(petID string) ([]AdoptionApply, error) {
 
 func FindAdoptionApplyByUserID(userID string) ([]AdoptionApply, error) {
 	var adapplys []AdoptionApply
-	err := MysqlDB.Where("user_id=?", userID).Find(&adapplys)
+	err := MysqlDB.Where("user_id=?", userID).OrderBy("updated desc").Find(&adapplys)
 	return adapplys, err
 }
 
